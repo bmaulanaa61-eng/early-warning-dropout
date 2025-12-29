@@ -1,0 +1,5 @@
+outs:
+- md5: e546f088af36bfa9046740bc4a50db82
+  size: 520
+  hash: md5
+  path: fitur_names.pkl
