@@ -1,0 +1,21 @@
+# Data files
+*.csv
+
+# Model files
+*.pkl
+
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Environment
+.env
+venv/
+
+# DVC
+/data/*.csv.dvc
+
+# OS
+.DS_Store
+Thumbs.db
