@@ -1,0 +1,5 @@
+outs:
+- md5: 4033b638fddeadd0f71a6bed363d8448
+  size: 1533241
+  hash: md5
+  path: model_dropout.pkl

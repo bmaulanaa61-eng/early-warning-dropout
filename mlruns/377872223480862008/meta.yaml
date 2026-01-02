@@ -1,0 +1,6 @@
+artifact_location: file:D:/MLOps/early_warning/mlruns/377872223480862008
+creation_time: 1767365929837
+experiment_id: '377872223480862008'
+last_update_time: 1767365929837
+lifecycle_stage: active
+name: early-warning-dropout

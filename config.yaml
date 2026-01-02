@@ -1,0 +1,29 @@
+# Data Settings
+data:
+  path: "data/data.csv"
+  delimiter: ";"
+  test_size: 0.2
+  random_state: 42
+
+# Model Settings
+model:
+  algorithm: "RandomForest"
+  class_weight: "balanced"
+  
+  # Parameter Grid untuk GridSearchCV
+  param_grid:
+    n_estimators: [100, 200]
+    max_depth: [5, 8, 10]
+    min_samples_split: [10, 20]
+    min_samples_leaf: [5, 10]
+
+# Output Settings
+output:
+  model_path: "models/model_dropout.pkl"
+  features_path: "models/fitur.pkl"
+
+#MLFlow settings
+mlflow:
+  experiment_name: "early-warning-dropout"
+  tracking_url: "./mlruns"
+

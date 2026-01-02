@@ -1,0 +1,14 @@
+artifact_uri: file:D:/MLOps/early_warning/mlruns/377872223480862008/e2235507da004699a08009279b255516/artifacts
+end_time: 1767366001291
+entry_point_name: ''
+experiment_id: '377872223480862008'
+lifecycle_stage: active
+run_id: e2235507da004699a08009279b255516
+run_name: hilarious-frog-847
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1767365930254
+status: 3
+tags: []
+user_id: ASUS
