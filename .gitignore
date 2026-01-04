@@ -1,18 +1,43 @@
-# Python
+# =====================
+# PYTHON
+# =====================
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 .ipynb_checkpoints/
 
-# Environment
+# =====================
+# VIRTUAL ENV
+# =====================
 .env
+.venv/
 venv/
 
-# OS
+# =====================
+# OS FILES
+# =====================
 .DS_Store
 Thumbs.db
 
-# Data (DVC)
-data/data.csv
+# =====================
+# MLFLOW (WAJIB)
+# =====================
+mlruns/
 
-# Model (DVC)
-models/*.pkl
+# =====================
+# DATA (DVC)
+# =====================
+data/
+!data/*.dvc
+
+# =====================
+# MODEL (DVC)
+# =====================
+models/
+!models/*.dvc
+
+# =====================
+# LOGS
+# =====================
+*.log

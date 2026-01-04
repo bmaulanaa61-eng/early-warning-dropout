@@ -128,10 +128,8 @@ with mlflow.start_run(run_name=config["mlflow"]["run_name"]):
     mlflow.log_artifact("classification_report.txt")
     os.remove("classification_report.txt")
 
-    # CREATE SIGNATURE
     signature = infer_signature(X_train, best_model.predict(X_train))
 
-    # REGISTER MODEL WITH SIGNATURE
     mlflow.sklearn.log_model(
         sk_model=best_model,
         name="model",

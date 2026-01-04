@@ -129,8 +129,8 @@ POST /predict
 ```json
 {
     "prediction": "Non-Dropout",
-    "probability_dropout": 0.1652,
-    "probability_non_dropout": 0.8348
+    "probability_dropout": 0.16,
+    "probability_non_dropout": 0.83
 }
 ```
 

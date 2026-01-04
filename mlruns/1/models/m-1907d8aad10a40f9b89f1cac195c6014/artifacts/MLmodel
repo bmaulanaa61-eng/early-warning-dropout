@@ -1,4 +1,4 @@
-artifact_path: file:D:/MLOps/early_warning/mlruns/1/models/m-6e256b64ca5445de8fb634cf7caa724a/artifacts
+artifact_path: file:D:/MLOps/early_warning/mlruns/1/models/m-1907d8aad10a40f9b89f1cac195c6014/artifacts
 flavors:
   python_function:
     env:
@@ -15,11 +15,11 @@ flavors:
     sklearn_version: 1.7.2
 is_signature_from_type_hint: false
 mlflow_version: 3.8.1
-model_id: m-6e256b64ca5445de8fb634cf7caa724a
+model_id: m-1907d8aad10a40f9b89f1cac195c6014
 model_size_bytes: 1523641
-model_uuid: m-6e256b64ca5445de8fb634cf7caa724a
+model_uuid: m-1907d8aad10a40f9b89f1cac195c6014
 prompts: null
-run_id: 4ad21f8dc06444ab8bdf813daa371dab
+run_id: ec3ab0107ee54f83bac66e1865f0a832
 signature:
   inputs: '[{"type": "long", "name": "Status_Pernikahan", "required": true}, {"type":
     "long", "name": "Kewarganegaraan", "required": true}, {"type": "long", "name":
@@ -45,4 +45,4 @@ signature:
   outputs: '[{"type": "tensor", "tensor-spec": {"dtype": "int64", "shape": [-1]}}]'
   params: null
 type_hint_from_example: false
-utc_time_created: '2026-01-03 18:21:24.514685'
+utc_time_created: '2026-01-04 11:15:02.109451'
