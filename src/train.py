@@ -1,112 +1,152 @@
+import os
 import pandas as pd
+import joblib
 import yaml
 import mlflow
 import mlflow.sklearn
+from mlflow.models.signature import infer_signature
+
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, accuracy_score, f1_score
 
 
-with open("config.yaml","r") as settings:
-    config = yaml.safe_load(settings)
+with open("config.yaml", "r") as f:
+    config = yaml.safe_load(f)
 
-mlflow.set_tracking_uri(config['mlflow']['tracking_url'])
-mlflow.set_experiment(config['mlflow']['experiment_name'])
+mlflow.set_tracking_uri(config["mlflow"]["tracking_url"])
+mlflow.set_experiment(config["mlflow"]["experiment_name"])
 
-#Load Data
-df = pd.read_csv(config['data']['path'],delimiter=config['data']['delimiter'])
+REGISTERED_MODEL_NAME = "student_dropout"
+
+df = pd.read_csv(
+    config["data"]["path"],
+    delimiter=config["data"]["delimiter"]
+)
+
 df.columns = df.columns.str.strip()
-df = df.rename(columns={'Daytime/evening attendance\t': 'Daytime/evening attendance'})
-df.drop_duplicates()
-df['Target'] = df['Target'].str.strip()
-df['Label'] = df['Target'].apply(lambda x: 1 if x == 'Dropout' else 0 )
+df = df.rename(columns={
+    "Daytime/evening attendance\t": "Daytime/evening attendance"})
+df = df.drop_duplicates()
 
-#Features
-features  = {
-    'Marital status': 'Status_Pernikahan',
-    'Nacionality': 'Kewarganegaraan',
-    'Gender': 'Jenis_Kelamin',
-    'Age at enrollment': 'Usia_Saat_Daftar',
-    'Application mode': 'Jalur_Pendaftaran',
-    'Application order': 'Urutan_Pilihan',
-    'Course': 'Program_Studi',
-    'Daytime/evening attendance': 'Kelas_Siang_Malam',
-    'Previous qualification': 'Pendidikan_Sebelumnya',
-    'Previous qualification (grade)': 'Nilai_Pendidikan_Sebelumnya',
-    'Admission grade': 'Nilai_Masuk',
-    "Mother's qualification": 'Pendidikan_Ibu',
-    "Father's qualification": 'Pendidikan_Ayah',
-    "Mother's occupation": 'Pekerjaan_Ibu',
-    "Father's occupation": 'Pekerjaan_Ayah',
-    'Displaced': 'Pindahan',
-    'Educational special needs': 'Berkebutuhan_Khusus',
-    'Debtor': 'Punya_Tunggakan',
-    'Tuition fees up to date': 'SPP_Lunas',
-    'Scholarship holder': 'Penerima_Beasiswa',
-    'International': 'Mahasiswa_Internasional',
-    'Curricular units 1st sem (credited)': 'SKS_Sem1_Diakui',
-    'Curricular units 1st sem (enrolled)': 'SKS_Sem1_Diambil',
-    'Curricular units 1st sem (evaluations)': 'SKS_Sem1_Evaluasi',
-    'Curricular units 1st sem (approved)': 'SKS_Sem1_Lulus',
-    'Curricular units 1st sem (grade)': 'Nilai_Sem1',
-    'Curricular units 1st sem (without evaluations)': 'SKS_Sem1_Tanpa_Evaluasi'
+df["Target"] = df["Target"].str.strip()
+df["Label"] = df["Target"].apply(lambda x: 1 if x == "Dropout" else 0)
+
+features = {
+    "Marital status": "Status_Pernikahan",
+    "Nacionality": "Kewarganegaraan",
+    "Gender": "Jenis_Kelamin",
+    "Age at enrollment": "Usia_Saat_Daftar",
+    "Application mode": "Jalur_Pendaftaran",
+    "Application order": "Urutan_Pilihan",
+    "Course": "Program_Studi",
+    "Daytime/evening attendance": "Kelas_Siang_Malam",
+    "Previous qualification": "Pendidikan_Sebelumnya",
+    "Previous qualification (grade)": "Nilai_Pendidikan_Sebelumnya",
+    "Admission grade": "Nilai_Masuk",
+    "Mother's qualification": "Pendidikan_Ibu",
+    "Father's qualification": "Pendidikan_Ayah",
+    "Mother's occupation": "Pekerjaan_Ibu",
+    "Father's occupation": "Pekerjaan_Ayah",
+    "Displaced": "Pindahan",
+    "Educational special needs": "Berkebutuhan_Khusus",
+    "Debtor": "Punya_Tunggakan",
+    "Tuition fees up to date": "SPP_Lunas",
+    "Scholarship holder": "Penerima_Beasiswa",
+    "International": "Mahasiswa_Internasional",
+    "Curricular units 1st sem (credited)": "SKS_Sem1_Diakui",
+    "Curricular units 1st sem (enrolled)": "SKS_Sem1_Diambil",
+    "Curricular units 1st sem (evaluations)": "SKS_Sem1_Evaluasi",
+    "Curricular units 1st sem (approved)": "SKS_Sem1_Lulus",
+    "Curricular units 1st sem (grade)": "Nilai_Sem1",
+    "Curricular units 1st sem (without evaluations)": "SKS_Sem1_Tanpa_Evaluasi"
 }
 
-X = df[list(features.keys())].copy()
-X = X.rename(columns=features)
-y = df['Label']
+X = df[list(features.keys())].rename(columns=features)
+y = df["Label"]
 
-X_train,X_test,y_train,y_test = train_test_split(
-    X,y,
-    test_size=config['data']['test_size'],
-    random_state=config['data']['random_state'],
+feature_names = list(X.columns)
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y,
+    test_size=config["data"]["test_size"],
+    random_state=config["data"]["random_state"],
     stratify=y
 )
 
-print("=" * 50)
+print("========================================")
 print("Training Model")
-print("=" * 50)
-print(f"Data Training: {X_train.shape[0]}")
-print(f"Data Testing: {X_test.shape[0]}")
+print("Train Size :", X_train.shape[0])
+print("Test Size  :", X_test.shape[0])
+print("========================================")
 
-with mlflow.start_run():
-    mlflow.log_param("algorithm", config['model']['algorithm'])
-    mlflow.log_param("test_size", config['data']['test_size'])
-    mlflow.log_param("param_grid",config['model']['param_grid'])
+with mlflow.start_run(run_name=config["mlflow"]["run_name"]):
 
-    rf = RandomForestClassifier(
-        random_state=config['data']['random_state'], 
-        class_weight=config['model']['class_weight']
+    mlflow.log_param("algorithm", "RandomForest")
+    mlflow.log_param("test_size", config["data"]["test_size"])
+
+    model = RandomForestClassifier(
+        random_state=config["data"]["random_state"],
+        class_weight=config["model"]["class_weight"]
     )
-    grid_search = GridSearchCV(
-        rf,
-        config['model']['param_grid'],
+
+    grid = GridSearchCV(
+        model,
+        config["model"]["param_grid"],
         cv=5,
-        scoring='f1',
-        n_jobs= 1
+        scoring="f1",
+        n_jobs=-1
     )
-    grid_search.fit(X_train,y_train)
-    best_model = grid_search.best_estimator_
 
-    mlflow.log_params(grid_search.best_params_)
+    grid.fit(X_train, y_train)
+    best_model = grid.best_estimator_
 
+    mlflow.log_params(grid.best_params_)
+
+    # EVALUATION
     y_pred = best_model.predict(X_test)
-    acc_train = best_model.score(X_train,y_train)
-    acc_test = accuracy_score(y_test,y_pred)
+
+    acc_train = best_model.score(X_train, y_train)
+    acc_test = accuracy_score(y_test, y_pred)
     f1 = f1_score(y_test, y_pred)
 
     mlflow.log_metric("accuracy_train", acc_train)
     mlflow.log_metric("accuracy_test", acc_test)
     mlflow.log_metric("f1_score", f1)
 
-    mlflow.sklearn.log_model(best_model, "model")
-    print("\n" + "=" * 50)
-    print("Hasil Evaluasi")
-    print("=" * 50)
-    print(f"Best Parameters: {grid_search.best_params_}")
-    print(f"Akurasi Training: {acc_train*100:.2f}%")
-    print(f"Akurasi Testing: {acc_test*100:.2f}%")
-    print(f"F1-Score: {f1:.4f}")
-    print("\nHasil Klasifikasi:")
-    print(classification_report(y_test, y_pred, target_names=['Non-Dropout', 'Dropout']))
-    print(f"\nModel tersimpan di MLflow")
+    # CLASSIFICATION REPORT
+    report_text = classification_report(
+        y_test,
+        y_pred,
+        target_names=["Non-Dropout", "Dropout"]
+    )
+
+    with open("classification_report.txt", "w") as f:
+        f.write(report_text)
+
+    mlflow.log_artifact("classification_report.txt")
+    os.remove("classification_report.txt")
+
+    # CREATE SIGNATURE
+    signature = infer_signature(X_train, best_model.predict(X_train))
+
+    # REGISTER MODEL WITH SIGNATURE
+    mlflow.sklearn.log_model(
+        sk_model=best_model,
+        name="model",
+        signature=signature,
+        registered_model_name=REGISTERED_MODEL_NAME
+    )
+
+    # SAVE LOCAL ARTIFACT
+    os.makedirs("models", exist_ok=True)
+    joblib.dump(best_model, "models/model_dropout.pkl")
+    joblib.dump(feature_names, "models/fitur.pkl")
+
+    print("========================================")
+    print("Training Selesai")
+    print("Model Registrasi :", REGISTERED_MODEL_NAME)
+    print("Accuracy Testing    :", round(acc_test, 2))
+    print("F1 SCORE         :", round(f1, 2))
+    print("========================================")

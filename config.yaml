@@ -9,8 +9,6 @@ data:
 model:
   algorithm: "RandomForest"
   class_weight: "balanced"
-  
-  # Parameter Grid untuk GridSearchCV
   param_grid:
     n_estimators: [100, 200]
     max_depth: [5, 8, 10]
@@ -22,8 +20,8 @@ output:
   model_path: "models/model_dropout.pkl"
   features_path: "models/fitur.pkl"
 
-#MLFlow settings
+# MLflow Settings
 mlflow:
   experiment_name: "early-warning-dropout"
-  tracking_url: "./mlruns"
-
+  run_name: "random-forest-gridsearch"
+  tracking_url: "sqlite:///mlflow.db"
