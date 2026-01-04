@@ -1,4 +1,4 @@
-# 🎓 Early Warning Student Dropout Prediction
+# Early Warning Student Dropout Prediction
 
 Sistem **Early Warning** untuk memprediksi mahasiswa yang berisiko **dropout** menggunakan Machine Learning dengan pendekatan **end-to-end MLOps**.
 
