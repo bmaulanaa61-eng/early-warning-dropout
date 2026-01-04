@@ -5,6 +5,36 @@ data:
   test_size: 0.2
   random_state: 42
 
+# Feature Mapping
+features:
+  Marital status: Status_Pernikahan
+  Nacionality: Kewarganegaraan
+  Gender: Jenis_Kelamin
+  Age at enrollment: Usia_Saat_Daftar
+  Application mode: Jalur_Pendaftaran
+  Application order: Urutan_Pilihan
+  Course: Program_Studi
+  Daytime/evening attendance: Kelas_Siang_Malam
+  Previous qualification: Pendidikan_Sebelumnya
+  Previous qualification (grade): Nilai_Pendidikan_Sebelumnya
+  Admission grade: Nilai_Masuk
+  Mother's qualification: Pendidikan_Ibu
+  Father's qualification: Pendidikan_Ayah
+  Mother's occupation: Pekerjaan_Ibu
+  Father's occupation: Pekerjaan_Ayah
+  Displaced: Pindahan
+  Educational special needs: Berkebutuhan_Khusus
+  Debtor: Punya_Tunggakan
+  Tuition fees up to date: SPP_Lunas
+  Scholarship holder: Penerima_Beasiswa
+  International: Mahasiswa_Internasional
+  Curricular units 1st sem (credited): SKS_Sem1_Diakui
+  Curricular units 1st sem (enrolled): SKS_Sem1_Diambil
+  Curricular units 1st sem (evaluations): SKS_Sem1_Evaluasi
+  Curricular units 1st sem (approved): SKS_Sem1_Lulus
+  Curricular units 1st sem (grade): Nilai_Sem1
+  Curricular units 1st sem (without evaluations): SKS_Sem1_Tanpa_Evaluasi
+
 # Model Settings
 model:
   algorithm: "RandomForest"
@@ -25,3 +55,4 @@ mlflow:
   experiment_name: "early-warning-dropout"
   run_name: "random-forest-gridsearch"
   tracking_url: "sqlite:///mlflow.db"
+  registered_model_name: "student_dropout"

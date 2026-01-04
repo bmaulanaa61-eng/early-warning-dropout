@@ -1,103 +1,106 @@
-import logging
-import pandas as pd
+import joblib
 import mlflow
+import pandas as pd
+
 from fastapi import FastAPI, HTTPException
-from api.schemas import StudentData, PredictionResponse
+from pydantic import BaseModel
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
-)
+from utils.config_loader import load_config
+from utils.logging import setup_logger
 
 
-MLFLOW_TRACKING_URI = "sqlite:///mlflow.db"
-MODEL_NAME = "student_dropout"
+# ======================================================
+# APP & LOGGER
+# ======================================================
+app = FastAPI(title="Student Dropout Prediction")
+logger = setup_logger("api")
 
-mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 
+# ======================================================
+# LOAD CONFIG
+# ======================================================
+config = load_config()
+logger.info("Config berhasil dimuat")
+
+
+# ======================================================
+# MLFLOW SETUP
+# ======================================================
+mlflow.set_tracking_uri(config["mlflow"]["tracking_url"])
+REGISTERED_MODEL_NAME = config["mlflow"]["registered_model_name"]
+
+
+# ======================================================
+# LOAD MODEL & FEATURES
+# ======================================================
 try:
-    # Prioritas: Production
-    model_uri = f"models:/{MODEL_NAME}@production"
+    logger.info("Memuat model dari MLflow Registry...")
+
+    model_uri = "models:/student_dropout@production"
     model = mlflow.sklearn.load_model(model_uri)
-    logging.info("Model berhasil dimuat dari stage Production")
+
+    feature_names = joblib.load(config["output"]["features_path"])
+
+    logger.info("Model & fitur berhasil dimuat")
 
 except Exception as e:
-    logging.warning(f"Model Production tidak ditemukan: {e}")
-    try:
-        # Fallback: versi terbaru
-        model_uri = f"models:/{MODEL_NAME}@latest"
-        model = mlflow.sklearn.load_model(model_uri)
-        logging.info("Model berhasil dimuat dari versi terbaru (latest)")
-    except Exception as err:
-        logging.error("Gagal memuat model dari MLflow Registry")
-        raise RuntimeError("Gagal memuat model MLflow") from err
+    logger.error("Gagal memuat model dari MLflow", exc_info=True)
+    raise RuntimeError("Model tidak dapat dimuat")
 
-model_metadata = mlflow.models.get_model_info(model_uri)
 
-if model_metadata.signature is None:
-    raise RuntimeError(
-        "Signature model tidak ditemukan. Pastikan model disimpan dengan signature."
-    )
+# ======================================================
+# REQUEST SCHEMA
+# ======================================================
+class PredictionRequest(BaseModel):
+    data: dict
 
-feature_names = model_metadata.signature.inputs.input_names()
 
-logging.info(f"Daftar fitur model: {feature_names}")
-
-app = FastAPI(
-    title="Early Warning Student Dropout API",
-    description="Prediksi Dropout Mahasiswa Menggunakan MLflow",
-    version="1.0.0"
-)
-
-@app.get("/")
-def root():
-    return {
-        "status": 200,
-        "message": "Success"
-    }
-
+# ======================================================
+# HEALTH CHECK
+# ======================================================
 @app.get("/health")
 def health_check():
     return {
-        "status": 200,
-        "message": "Success"
+        "status": "ok",
+        "model": REGISTERED_MODEL_NAME
     }
 
-@app.post("/predict", response_model=PredictionResponse)
-def predict(data: StudentData):
+
+# ======================================================
+# PREDICTION ENDPOINT
+# ======================================================
+@app.post("/predict")
+def predict(request: PredictionRequest):
     try:
-        # Konversi input ke DataFrame
-        input_df = pd.DataFrame([data.model_dump()])
-        input_df = input_df[feature_names]
+        input_data = request.data
 
-        # Prediksi
-        prediction = model.predict(input_df)[0]
-        probabilities = model.predict_proba(input_df)[0]
+        # Validasi fitur
+        missing_features = set(feature_names) - set(input_data.keys())
+        if missing_features:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Fitur tidak lengkap: {missing_features}"
+            )
 
-        hasil = {
-            "prediction": "Dropout" if prediction == 1 else "Non-Dropout",
-            "probability_dropout": round(float(probabilities[1]), 4),
-            "probability_non_dropout": round(float(probabilities[0]), 4),
+        # Urutan fitur harus sama
+        df = pd.DataFrame([input_data])[feature_names]
+
+        prediction = model.predict(df)[0]
+        probability = model.predict_proba(df)[0][1]
+
+        result = {
+            "prediction_label": "Dropout" if prediction == 1 else "Non-Dropout",
+            "prediction_score": round(float(probability), 2)
         }
 
-        logging.info(f"Prediksi berhasil: {hasil}")
+        logger.info(f"Prediksi berhasil: {result}")
+        return result
 
-        return {
-            "status": 200,
-            "message": "Success",
-            "data": hasil
-        }
-
-    except KeyError as e:
-        logging.error(f"Kesalahan fitur input: {e}")
-        raise HTTPException(
-            status_code=400,
-            detail=f"Fitur input tidak sesuai dengan model: {str(e)}"
-        )
-
+    except HTTPException:
+        raise
     except Exception as e:
-        logging.error(f"Terjadi kesalahan saat prediksi: {e}")
+        logger.error("Terjadi error saat prediksi", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail="Terjadi kesalahan pada proses prediksi"
+            detail="Internal server error"
         )
