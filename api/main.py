@@ -21,14 +21,14 @@ app = FastAPI(
 def root():
     return {
         "status": 200, 
-        "message": "Early Warning Student Dropout API"
+        "message": "Success"
         }
 
 @app.get("/health")
 def health_check():
     return {
         "status": 200, 
-        "message": "health"
+        "message": "Success"
         }
 
 @app.post("/predict", response_model=PredictionResponse)
